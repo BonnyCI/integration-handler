@@ -12,5 +12,5 @@
 
 import pbr.version
 
-version_info = pbr.version.VersionInfo('bonny_integration_handler')
+version_info = pbr.version.VersionInfo('bonnyci_integration_handler')
 version_string = version_info.version_string()
