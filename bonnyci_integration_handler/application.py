@@ -105,16 +105,14 @@ class BonnyIntegrationHandler(object):
             raise webob.exc.HTTPBadRequest()
 
     def validate_signature(self, request):
-        signature = request.headers.get('X-Hub-Signature')
-
-        if self.webhook_key and not signature:
+        if self.webhook_key and not request.signature:
             raise webob.exc.HTTPForbidden()
 
-        elif signature and not self.webhook_key:
+        elif request.signature and not self.webhook_key:
             raise webob.exc.HTTPForbidden()
 
         elif self.webhook_key:
-            digest, value = signature.split('=')
+            digest, value = request.signature.split('=')
 
             if digest != 'sha1':
                 raise webob.exc.HTTPForbidden()
