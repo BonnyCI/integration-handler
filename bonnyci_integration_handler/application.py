@@ -17,7 +17,10 @@ import hmac
 import logging
 import os
 import platform
+import shlex
+import subprocess
 import sys
+import tempfile
 
 import cachecontrol
 import ipaddress
@@ -76,6 +79,7 @@ class BonnyIntegrationHandler(object):
     def __init__(self,
                  integration_id,
                  integration_key,
+                 invoke=None,
                  output_file=None,
                  webhook_key=None,
                  debug=False):
@@ -84,6 +88,7 @@ class BonnyIntegrationHandler(object):
         self.output_file = output_file
         self.webhook_key = webhook_key
         self.debug = debug
+        self.invoke = invoke
 
         self._installation_token_cache = {}
 
@@ -219,6 +224,37 @@ class BonnyIntegrationHandler(object):
     def get_config(self):
         return tenant.write_config(self.get_repositories())
 
+    def write_output(self):
+        if not self.output_file and not self.invoke:
+            LOG.warning("No predefined output file or script to invoke means "
+                        "that you are not doing anything with the generated "
+                        "output. This seems wrong.")
+            return
+
+        if self.output_file:
+            fd = open(self.output_file, 'w')
+            unlink = False
+            output_file = self.output_file
+        else:
+            fd = tempfile.NamedTemporaryFile(delete=False)
+            unlink = True
+            output_file = fd.name
+
+        try:
+            try:
+                fd.write(config)
+            finally:
+                fd.close()
+
+            if self.invoke:
+                args = shlex.split(self.invoke)
+                args.append(output_file)
+                subprocess.call(args)
+
+        finally:
+            if unlink:
+                os.unlink(output_file)
+
     @webob.dec.wsgify(RequestClass=Request)
     def __call__(self, request):
         if self.debug:
@@ -232,12 +268,7 @@ class BonnyIntegrationHandler(object):
             self.validate_signature(request)
 
             config = self.get_config()
-
-            with open(self.output_file, 'w') as f:
-                f.write(config)
-
-            # need to either SIGHUP or send a message over socket here to
-            # reload zuul config
+            self.write_output(config)
 
             headers = {'Content-Type': 'application/text'}
             return webob.Response(headers=headers, body='Success')
@@ -263,6 +294,11 @@ def initialize_application(argv=None):
                         default=os.environ.get('BIH_INTEGRATION_KEY'),
                         help='The Integration Key File')
 
+    parser.add_argument('--invoke',
+                        dest='invoke',
+                        default=os.environ.get('BIH_INVOKE'),
+                        help='A script to invoke when tenant file changed')
+
     parser.add_argument('--output-file',
                         dest='output_file',
                         default=os.environ.get('BIH_OUTPUT_FILE'),
@@ -279,11 +315,18 @@ def initialize_application(argv=None):
         LOG.error('Require both an integration ID and key file to function')
         sys.exit(1)
 
+    if not (opts.output_file or opts.invoke):
+        LOG.error("Requires either an output file location or a script to "
+                  "invoke. Otherwise you're not doing anything with the "
+                  "output.")
+        sys.exit(1)
+
     with open(opts.integration_key, 'r') as f:
         integration_key = f.read()
 
     return BonnyIntegrationHandler(integration_id=opts.integration_id,
                                    integration_key=integration_key,
                                    debug=opts.debug,
+                                   invoke=opts.invoke,
                                    output_file=opts.output_file,
                                    webhook_key=opts.webhook_key)
