@@ -95,7 +95,7 @@ class BonnyIntegrationHandler(object):
                                   heuristic=utils.DropMaxAgeHeaders())
 
     def validate_request(self, request):
-        if request.path != '/':
+        if request.path != '/integration/':
             raise webob.exc.HTTPNotFound()
 
         if request.method != 'POST':
