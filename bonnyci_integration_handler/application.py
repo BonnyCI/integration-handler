@@ -224,7 +224,7 @@ class BonnyIntegrationHandler(object):
     def get_config(self):
         return tenant.write_config(self.get_repositories())
 
-    def write_output(self):
+    def write_output(self, config):
         if not self.output_file and not self.invoke:
             LOG.warning("No predefined output file or script to invoke means "
                         "that you are not doing anything with the generated "
