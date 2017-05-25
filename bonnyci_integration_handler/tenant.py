@@ -27,25 +27,27 @@ def generate_bonny(repos, item):
     if item.get('tenant', {}).get('name') != 'BonnyCI':
         return item
 
-    gh = item.get('tenant', {}).get('source', {}).get('github', {})
+    source = item.get('tenant', {}).get('source', {}).copy()
 
-    config = gh.get('config-projects', [])
+    gh = source.pop('github', {})
+    config_projects = gh.get('config-projects', [])
+    untrusted_projects = gh.get('untrusted-projects', [])
 
-    # don't include and config-projects in new untrusted list
-    repos = set(repos) - set(config)
+    # don't include any config-projects in new untrusted list
+    repos = set(repos) - set(config_projects)
 
     # our new untrusted is anything in the template and all fetched
-    untrusted = set(gh.get('untrusted-projects', [])) | repos
+    new_untrusted_projects = set(untrusted_projects) | repos
+
+    source['github'] = {
+        'config-projects': config_projects,
+        'untrusted-projects': sorted(new_untrusted_projects)
+    }
 
     return {
         'tenant': {
             'name': 'BonnyCI',
-            'source': {
-                'github': {
-                    'config-projects': config,
-                    'untrusted-projects': sorted(untrusted)
-                }
-            }
+            'source': source,
         }
     }
 
