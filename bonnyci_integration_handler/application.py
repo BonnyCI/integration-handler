@@ -49,12 +49,10 @@ class BonnyIntegrationHandler(object):
                  integration_id,
                  integration_key,
                  invoke=None,
-                 output_file=None,
-                 webhook_key=None):
+                 output_file=None):
         self.integration_id = integration_id
         self.integration_key = integration_key
         self.output_file = output_file
-        self.webhook_key = webhook_key
         self.invoke = invoke
 
         self._installation_token_cache = {}
@@ -186,61 +184,59 @@ class BonnyIntegrationHandler(object):
         config = self.get_config()
         self.write_output(config)
 
+    @classmethod
+    def register_argparse_arguments(cls, parser):
+        parser.add_argument('--integration-id',
+                            dest='integration_id',
+                            type=int,
+                            default=os.environ.get('BIH_INTEGRATION_ID'),
+                            help='The Integration ID')
 
-def initialize_application(argv=None):
-    parser = argparse.ArgumentParser()
+        parser.add_argument('--integration-key',
+                            dest='integration_key',
+                            default=os.environ.get('BIH_INTEGRATION_KEY'),
+                            help='The Integration Key File')
 
-    parser.add_argument('--integration-id',
-                        dest='integration_id',
-                        type=int,
-                        default=os.environ.get('BIH_INTEGRATION_ID'),
-                        help='The Integration ID')
+        parser.add_argument('--invoke',
+                            dest='invoke',
+                            default=os.environ.get('BIH_INVOKE'),
+                            help='A script to invoke when tenant file changed')
 
-    parser.add_argument('--integration-key',
-                        dest='integration_key',
-                        default=os.environ.get('BIH_INTEGRATION_KEY'),
-                        help='The Integration Key File')
+        parser.add_argument('--output-file',
+                            dest='output_file',
+                            default=os.environ.get('BIH_OUTPUT_FILE'),
+                            help='The Integration Key File')
 
-    parser.add_argument('--invoke',
-                        dest='invoke',
-                        default=os.environ.get('BIH_INVOKE'),
-                        help='A script to invoke when tenant file changed')
+    @classmethod
+    def load_from_argparse_arguments(cls, opts, **kwargs):
+        kwargs.setdefault('integration_id', opts.integration_id)
+        kwargs.setdefault('integration_key', opts.integration_key)
+        kwargs.setdefault('invoke', opts.invoke)
+        kwargs.setdefault('output_file', opts.output_file)
 
-    parser.add_argument('--output-file',
-                        dest='output_file',
-                        default=os.environ.get('BIH_OUTPUT_FILE'),
-                        help='The Integration Key File')
+        if not (kwargs['integration_id'] and kwargs['integration_key']):
+            LOG.error('Require both an integration ID and key to function')
+            sys.exit(1)
 
-    parser.add_argument('--webhook-key',
-                        dest='webhook_key',
-                        default=os.environ.get('BIH_WEBHOOK_KEY'),
-                        help='Symmetric key to validate webhook signatures')
+        if not (kwargs['output_file'] or kwargs['invoke']):
+            LOG.error("Requires either an output file location or a script to "
+                      "invoke. Otherwise you're not doing anything with the "
+                      "output.")
+            sys.exit(1)
 
-    opts = parser.parse_args(sys.argv[1:] if argv is None else argv)
+        with open(kwargs['integration_key'], 'r') as f:
+            kwargs['integration_key'] = f.read()
 
-    if not (opts.integration_id and opts.integration_key):
-        LOG.error('Require both an integration ID and key file to function')
-        sys.exit(1)
-
-    if not (opts.output_file or opts.invoke):
-        LOG.error("Requires either an output file location or a script to "
-                  "invoke. Otherwise you're not doing anything with the "
-                  "output.")
-        sys.exit(1)
-
-    with open(opts.integration_key, 'r') as f:
-        integration_key = f.read()
-
-    return BonnyIntegrationHandler(integration_id=opts.integration_id,
-                                   integration_key=integration_key,
-                                   invoke=opts.invoke,
-                                   output_file=opts.output_file,
-                                   webhook_key=opts.webhook_key)
+        return cls(**kwargs)
 
 
 def main(argv=None):
     logging.basicConfig(level=logging.DEBUG)
-    initialize_application(argv=argv).run()
+
+    parser = argparse.ArgumentParser()
+    BonnyIntegrationHandler.register_argparse_arguments(parser)
+    opts = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    BonnyIntegrationHandler.load_from_argparse_arguments(opts).run()
 
 
 if __name__ == '__main__':

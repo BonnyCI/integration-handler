@@ -10,8 +10,11 @@
 # License for the specific language governing permissions and limitations
 # under the License.
 
+import argparse
 import hashlib
 import hmac
+import os
+import sys
 
 import ipaddress
 import webob
@@ -103,7 +106,26 @@ class BonnyIntegrationRequestHandler(object):
         headers = {'Content-Type': 'application/text'}
         return webob.Response(headers=headers, body='Success')
 
+    @classmethod
+    def register_argparse_arguments(cls, parser):
+        parser.add_argument(
+            '--webhook-key',
+            dest='webhook_key',
+            default=os.environ.get('BIH_WEBHOOK_KEY'),
+            help='Symmetric key to validate webhook signatures')
 
-def initialize_webapp(argv=None):
-    app = application.initialize_application(argv=argv)
-    return BonnyIntegrationRequestHandler(app)
+    @classmethod
+    def load_from_argparse_arguments(cls, opts, **kwargs):
+        kwargs.setdefault('webhook_hey', opts.webhook_key)
+        return cls(**kwargs)
+
+
+def main(argv=None):
+    parser = argparse.ArgumentParser()
+    application.BonnyIntegrationHandler.register_argparse_arguments(parser)
+    BonnyIntegrationRequestHandler.register_argparse_arguments(parser)
+    opt = parser.parse_args(sys.argv[1:] if argv is None else argv)
+    app = application.BonnyIntegrationHandler.load_from_argparse_arguments(opt)
+
+    return BonnyIntegrationRequestHandler.load_from_argparse_arguments(opt,
+                                                                       app=app)
