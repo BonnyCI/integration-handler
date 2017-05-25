@@ -50,7 +50,12 @@ def generate_bonny(repos, item):
     }
 
 
-def write_config(repos):
-    base = yaml.safe_load(BASE_TEMPLATE)
+def write_config(repos, template_file=None):
+    if template_file:
+        with open(template_file, 'r') as f:
+            base = yaml.safe_load(f)
+    else:
+        base = yaml.safe_load(BASE_TEMPLATE)
+
     config = [generate_bonny(repos, i) for i in base]
     return yaml.safe_dump(config, encoding='utf-8', default_flow_style=False)

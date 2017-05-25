@@ -49,11 +49,13 @@ class BonnyIntegrationHandler(object):
                  integration_id,
                  integration_key,
                  invoke=None,
+                 template=None,
                  output_file=None):
         self.integration_id = integration_id
         self.integration_key = integration_key
         self.output_file = output_file
         self.invoke = invoke
+        self.template = template
 
         self._installation_token_cache = {}
 
@@ -147,7 +149,8 @@ class BonnyIntegrationHandler(object):
         return repositories
 
     def get_config(self):
-        return tenant.write_config(self.get_repositories())
+        repos = self.get_repositories()
+        return tenant.write_config(repos, template_file=self.template)
 
     def write_output(self, config):
         if not self.output_file and not self.invoke:
@@ -197,6 +200,11 @@ class BonnyIntegrationHandler(object):
                             default=os.environ.get('BIH_INTEGRATION_KEY'),
                             help='The Integration Key File')
 
+        parser.add_argument('--template',
+                            dest='template',
+                            default=os.environ.get('BIH_TEMPLATE'),
+                            help='A template to insert tenants into')
+
         parser.add_argument('--invoke',
                             dest='invoke',
                             default=os.environ.get('BIH_INVOKE'),
@@ -212,6 +220,7 @@ class BonnyIntegrationHandler(object):
         kwargs.setdefault('integration_id', opts.integration_id)
         kwargs.setdefault('integration_key', opts.integration_key)
         kwargs.setdefault('invoke', opts.invoke)
+        kwargs.setdefault('template', opts.template)
         kwargs.setdefault('output_file', opts.output_file)
 
         if not (kwargs['integration_id'] and kwargs['integration_key']):
