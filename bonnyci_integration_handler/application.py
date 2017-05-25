@@ -258,13 +258,11 @@ def initialize_application(argv=None):
                         dest='integration_id',
                         type=int,
                         default=os.environ.get('BIH_INTEGRATION_ID'),
-                        required=True,
                         help='The Integration ID')
 
     parser.add_argument('--integration-key',
                         dest='integration_key',
                         default=os.environ.get('BIH_INTEGRATION_KEY'),
-                        required=True,
                         help='The Integration Key File')
 
     parser.add_argument('--output-file',
@@ -278,6 +276,10 @@ def initialize_application(argv=None):
                         help='Symmetric key to validate webhook signatures')
 
     opts = parser.parse_args(sys.argv[1:] if argv is None else argv)
+
+    if not (opts.integration_id and opts.integration_key):
+        LOG.error('Require both an integration ID and key file to function')
+        sys.exit(1)
 
     with open(opts.integration_key, 'r') as f:
         integration_key = f.read()
