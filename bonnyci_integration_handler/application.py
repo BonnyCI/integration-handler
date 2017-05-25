@@ -76,7 +76,7 @@ class BonnyIntegrationHandler(object):
     def __init__(self,
                  integration_id,
                  integration_key,
-                 output_file,
+                 output_file=None,
                  webhook_key=None,
                  debug=False):
         self.integration_id = integration_id
@@ -270,7 +270,6 @@ def initialize_application(argv=None):
     parser.add_argument('--output-file',
                         dest='output_file',
                         default=os.environ.get('BIH_OUTPUT_FILE'),
-                        required=True,
                         help='The Integration Key File')
 
     parser.add_argument('--webhook-key',
