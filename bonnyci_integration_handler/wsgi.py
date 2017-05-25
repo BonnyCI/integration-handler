@@ -25,8 +25,7 @@ from bonnyci_integration_handler import application
 
 GITHUB_META_URL = 'https://api.github.com/meta'
 
-ALLOWED_EVENTS = frozenset(['integration_installation',
-                            'integration_installation_repositories'])
+ALLOWED_EVENTS = frozenset(['installation', 'installation_repositories'])
 
 
 class Request(webob.Request):
