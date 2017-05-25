@@ -84,7 +84,7 @@ class BonnyIntegrationRequestHandler(object):
 
     def validate_ip(self, request):
         request_ip = ipaddress.ip_address(request.client_addr.decode('utf-8'))
-        hook_blocks = self.session.get(GITHUB_META_URL).json()['hooks']
+        hook_blocks = self.app.session.get(GITHUB_META_URL).json()['hooks']
 
         for block in hook_blocks:
             if request_ip in ipaddress.ip_network(block):
