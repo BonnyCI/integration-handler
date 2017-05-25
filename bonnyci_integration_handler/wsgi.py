@@ -52,8 +52,9 @@ class Request(webob.Request):
 
 class BonnyIntegrationRequestHandler(object):
 
-    def __init__(self, app):
+    def __init__(self, app, webhook_key):
         self.app = app
+        self.webhook_key = webhook_key
 
     def validate_request(self, request):
         if request.path != '/integration/':
@@ -116,7 +117,7 @@ class BonnyIntegrationRequestHandler(object):
 
     @classmethod
     def load_from_argparse_arguments(cls, opts, **kwargs):
-        kwargs.setdefault('webhook_hey', opts.webhook_key)
+        kwargs.setdefault('webhook_key', opts.webhook_key)
         return cls(**kwargs)
 
 
