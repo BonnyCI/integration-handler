@@ -51,10 +51,17 @@ def generate_bonny(repos, item):
 
 
 def write_config(repos, template_file=None):
+    base = None
+
     if template_file:
-        with open(template_file, 'r') as f:
-            base = yaml.safe_load(f)
-    else:
+        try:
+            with open(template_file, 'r') as f:
+                base = yaml.safe_load(f)
+        except IOError:
+            LOG.exception("Failed to open template file, "
+                          "falling back to default.")
+
+    if not base:
         base = yaml.safe_load(BASE_TEMPLATE)
 
     config = [generate_bonny(repos, i) for i in base]
