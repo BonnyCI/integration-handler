@@ -144,7 +144,7 @@ class BonnyIntegrationHandler(object):
                                        key='repositories')
 
             for repo in repo_iter:
-                repositories.append('github.com/%s' % repo['full_name'])
+                repositories.append(repo['full_name'])
 
         return repositories
 
