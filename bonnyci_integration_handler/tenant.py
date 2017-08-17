@@ -19,7 +19,7 @@ BASE_TEMPLATE = """
     source:
       github:
         config-projects:
-        - github.com/BonnyCI/project-config
+        - BonnyCI/project-config
 """
 
 
